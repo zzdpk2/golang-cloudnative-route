@@ -205,6 +205,13 @@ func AnalyzeMatrix(matrix [][]int, match func(int) bool) (MatrixReport, error) {
 	m := len(matrix)
 	n := len(matrix[0])
 
+	flat := make([]int, 0, m*n)
+	for i, _ := range matrix {
+		for _, v := range matrix[i] {
+			flat = append(flat, v)
+		}
+	}
+
 }
 
 // LabelSet cannot use == because Names is a slice. Equal must define an
