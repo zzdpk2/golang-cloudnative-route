@@ -1,0 +1,1 @@
+TODO(exercise): document install, readiness, Helm test, upgrade, and rollback commands.

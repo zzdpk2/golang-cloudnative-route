@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package order.v1;
+
+option go_package = "github.com/rex/go-ddd-tdd/internal/commerce/integrations;integrations";
+
+// ============================================================
+//
+// ============================================================
+
+service OrderService {
+  rpc CreateOrder(CreateOrderRequest) returns (OrderReply);
+  rpc GetOrder(GetOrderRequest) returns (OrderReply);
+  rpc ConfirmOrder(ConfirmOrderRequest) returns (OrderReply);
+
+  rpc WatchOrders(WatchOrdersRequest) returns (stream OrderEvent);
+  rpc BulkCreate(stream CreateOrderRequest) returns (BulkCreateReply);
+  rpc Chat(stream OrderEvent) returns (stream OrderEvent);
+}
+
+message CreateOrderRequest {
+  string customer_id = 1;
+  Address shipping = 2;
+  repeated OrderLine lines = 3;
+}
+
+message Address {
+  string street = 1;
+  string city = 2;
+  string state = 3;
+  string postcode = 4;
+  string country = 5;
+}
+
+message OrderLine {
+  string product_id = 1;
+  string name = 2;
+  double price = 3;
+  string currency = 4;
+  int32 quantity = 5;
+}
+
+message GetOrderRequest {
+  string order_id = 1;
+}
+
+message ConfirmOrderRequest {
+  string order_id = 1;
+}
+
+message WatchOrdersRequest {
+  string customer_id = 1;
+}
+
+message OrderReply {
+  string order_id = 1;
+  string customer_id = 2;
+  string status = 3;
+  int32 line_count = 4;
+}
+
+message BulkCreateReply {
+  int32 created = 1;
+  repeated OrderReply orders = 2;
+}
+
+message OrderEvent {
+  string order_id = 1;
+  string type = 2;
+  string payload_json = 3;
+}

@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "release": "bootstrap-example",
+  "level": "L18",
+  "owner": "example-owner",
+  "source_revision": "documentation-example",
+  "gates": [
+    {
+      "id": "BOOTSTRAP.AUTO.001",
+      "description": "senior support packages pass their tests",
+      "kind": "command",
+      "category": "correctness",
+      "required": true,
+      "command": [
+        "go",
+        "test",
+        "./internal/senior/...",
+        "./cmd/seniorcheck/...",
+        "-count=1"
+      ],
+      "timeout": "2m"
+    },
+    {
+      "id": "BOOTSTRAP.EVIDENCE.001",
+      "description": "the acceptance contract exists",
+      "kind": "evidence",
+      "category": "operability",
+      "required": true,
+      "artifacts": [
+        {
+          "path": "docs/senior/ACCEPTANCE.md"
+        },
+        {
+          "path": "docs/senior/RUBRIC.md"
+        }
+      ]
+    },
+    {
+      "id": "BOOTSTRAP.REVIEW.001",
+      "description": "the release-train decision is recorded",
+      "kind": "approval",
+      "category": "decision",
+      "required": true,
+      "artifacts": [
+        {
+          "path": "docs/adr/0001-run-senior-training-as-a-release-train.md"
+        }
+      ],
+      "approval": {
+        "reviewer": "example-reviewer",
+        "reviewed_at": "2026-07-28T00:00:00Z",
+        "decision": "approved"
+      }
+    }
+  ]
+}

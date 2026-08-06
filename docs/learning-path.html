@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Commerce to llm-d Router — Learning Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+    mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose" });
+  </script>
+  <style>
+    :root { color-scheme: light; }
+    body { margin: 0; background: #f8fafc; color: #0f172a; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+    .shell { max-width: 1120px; margin: 0 auto; padding: 32px 20px 72px; }
+    .phase { margin-top: 40px; scroll-margin-top: 18px; }
+    .gate-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
+    .gate { display: flex; gap: 12px; min-height: 112px; padding: 16px; border: 1px solid #cbd5e1; border-radius: 14px; background: white; transition: .15s ease; }
+    .gate:hover { border-color: #6366f1; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(15,23,42,.08); }
+    .gate.done { background: #ecfdf5; border-color: #34d399; }
+    .gate.verified { box-shadow: inset 4px 0 0 #059669; }
+    .gate.verified input { cursor: not-allowed; }
+    .gate input { width: 19px; height: 19px; margin-top: 2px; accent-color: #059669; cursor: pointer; }
+    .gate-id { display: inline-flex; align-items: center; justify-content: center; min-width: 34px; height: 24px; padding: 0 7px; border-radius: 999px; background: #e0e7ff; color: #3730a3; font: 700 12px ui-monospace, monospace; }
+    .gate a { color: #3730a3; font-weight: 700; text-decoration: none; }
+    .gate a:hover { text-decoration: underline; }
+    .gate p { margin: 7px 0 0; color: #475569; font-size: 13px; line-height: 1.45; }
+    .gate .mistake-focus { margin-top: 10px; padding-top: 9px; border-top: 1px dashed #cbd5e1; color: #7c2d12; font-size: 12px; }
+    .progress-track { height: 12px; overflow: hidden; border-radius: 999px; background: #e2e8f0; }
+    .progress-fill { width: 0; height: 100%; background: linear-gradient(90deg,#4f46e5,#10b981); transition: width .2s ease; }
+    .nav a { display: inline-block; margin: 4px 6px 4px 0; padding: 7px 11px; border: 1px solid #cbd5e1; border-radius: 999px; color: #334155; text-decoration: none; font-size: 13px; background: white; }
+    .diagram-card { border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px; background: white; overflow-x: auto; }
+    .optional { border-left: 4px solid #f59e0b; background: #fffbeb; }
+    .optional-gate { border: 2px dashed #d97706; background: #fffaf0; }
+    .optional-gate.done { background: #fef3c7; border-color: #b45309; }
+    .optional-gate.verified { box-shadow: inset 4px 0 0 #b45309; }
+    .optional-progress-fill { width: 0; height: 100%; background: #b45309; transition: width .2s ease; }
+    code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+    @media (prefers-reduced-motion: reduce) { .gate, .progress-fill { transition: none; } }
+  </style>
+</head>
+<body>
+<main class="shell">
+  <header class="space-y-5">
+    <p class="text-xs font-bold uppercase tracking-[.22em] text-indigo-700">Single required path</p>
+    <div class="flex flex-wrap items-end justify-between gap-5">
+      <div>
+        <h1 class="text-4xl font-black tracking-tight">Commerce → llm-d Router</h1>
+        <p class="mt-3 max-w-3xl text-slate-600">Open the real source files and let <code>go run ./cmd/exercise next</code> choose the next contract. Passed gates synchronize automatically while this page is open.</p>
+      </div>
+      <div class="flex gap-2">
+        <a class="rounded-lg border border-cyan-300 bg-cyan-50 px-4 py-2 text-sm font-bold text-cyan-900 no-underline" href="../web/learning-path/README.md">Open SvelteKit console</a>
+        <a class="rounded-lg bg-indigo-700 px-4 py-2 text-sm font-bold text-white no-underline" href="LEARNING_PATH.md">Open Markdown guide</a>
+        <a class="rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-bold text-amber-900 no-underline" href="go100/README.md">100 Go Mistakes clinics</a>
+        <button id="sync-progress" class="rounded-lg border border-indigo-300 bg-indigo-50 px-4 py-2 text-sm font-bold text-indigo-800">Sync test progress</button>
+        <button id="reset" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold">Reset local progress</button>
+      </div>
+    </div>
+    <div class="rounded-2xl border border-slate-200 bg-white p-5">
+      <div class="mb-2 flex justify-between text-sm"><strong id="progress-label">0 / 36 gates</strong><span id="progress-percent">0%</span></div>
+      <div class="progress-track"><div id="progress-fill" class="progress-fill"></div></div>
+      <p id="sync-status" class="mt-2 text-xs text-slate-500">Test progress is loaded from <code>learning-progress.js</code>; manual checks remain local to this browser.</p>
+    </div>
+    <nav class="nav" aria-label="Learning phases">
+      <a href="#phase-1">1 · Foundations</a><a href="#phase-2">2 · Commerce</a><a href="#phase-3">3 · llm-d prerequisites</a><a href="#phase-4">4 · Router</a><a href="#optional">★ Optional</a>
+    </nav>
+    <p class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">Every card receives a book-aligned review prompt from <code>learning-progress.js</code>. It is a risk checklist, never an implementation answer.</p>
+  </header>
+
+  <section class="mt-9 grid gap-4 md:grid-cols-2">
+    <article class="diagram-card">
+      <h2 class="text-sm font-black uppercase tracking-wider text-rose-700">Before · competing shallow paths</h2>
+      <pre class="mermaid">
+flowchart TD
+  A[Many entry documents] --> B[lab]
+  A --> C[platform]
+  A --> D[Commerce layers]
+  A --> E[review]
+  A --> F[Router]
+  B -. repeated basics .-> E
+  C -. overlapping mechanisms .-> B
+      </pre>
+    </article>
+    <article class="diagram-card">
+      <h2 class="text-sm font-black uppercase tracking-wider text-emerald-700">After · one deep learning interface</h2>
+      <pre class="mermaid">
+flowchart LR
+  F[Foundations] --> E[Commerce Order]
+  E --> P[llm-d prerequisites]
+  P --> R[Production Router]
+  R --> U[Upstream capstone]
+  classDef deep fill:#172554,color:#fff,stroke:#172554,stroke-width:3px;
+  class F,E,P,R,U deep;
+      </pre>
+    </article>
+  </section>
+
+  <section id="phase-1" class="phase">
+    <p class="text-xs font-black uppercase tracking-[.2em] text-indigo-700">Phase 1</p>
+    <h2 class="mt-1 text-2xl font-black">Commerce foundations</h2>
+    <p class="mb-4 text-slate-600">One compact language pass. Every rule is reused by the Order request path.</p>
+    <div class="gate-grid">
+      <article class="gate" data-gate="F0"><input type="checkbox" aria-label="Complete F0"><div><span class="gate-id">F0</span> <a href="../internal/foundation/language/data_test.go">Data foundations</a><p>Ownership, UTF-8, maps, equality.</p></div></article>
+      <article class="gate" data-gate="F1"><input type="checkbox" aria-label="Complete F1"><div><span class="gate-id">F1</span> <a href="../internal/foundation/language/interfaces_test.go">Interface foundations</a><p>Method sets, typed nil, narrow adapters.</p></div></article>
+      <article class="gate" data-gate="F2"><input type="checkbox" aria-label="Complete F2"><div><span class="gate-id">F2</span> <a href="../internal/foundation/language/semantics_test.go">Go semantics</a><p>Value parts, defer, panic, nil rules.</p></div></article>
+      <article class="gate" data-gate="F3"><input type="checkbox" aria-label="Complete F3"><div><span class="gate-id">F3</span> <a href="../internal/foundation/language/errors_test.go">Error chains</a><p>Stable Is, As, and Unwrap behavior.</p></div></article>
+      <article class="gate" data-gate="F4"><input type="checkbox" aria-label="Complete F4"><div><span class="gate-id">F4</span> <a href="../internal/foundation/testing/testcraft_test.go">Test craft</a><p>Tables, properties, fuzzing, mutation.</p></div></article>
+    </div>
+  </section>
+
+  <section id="phase-2" class="phase">
+    <p class="text-xs font-black uppercase tracking-[.2em] text-indigo-700">Phase 2</p>
+    <h2 class="mt-1 text-2xl font-black">Commerce Order project</h2>
+    <p class="mb-4 text-slate-600">Milestone tests are the deep interface. Package tests diagnose failures.</p>
+    <div class="gate-grid">
+      <article class="gate" data-gate="E0"><input type="checkbox" aria-label="Complete E0"><div><span class="gate-id">E0</span> <a href="../internal/commerce/domain/money.go">Commerce values</a><p>Money, Quantity, Address.</p></div></article>
+      <article class="gate" data-gate="E1"><input type="checkbox" aria-label="Complete E1"><div><span class="gate-id">E1</span> <a href="../internal/commerce/domain/order.go">Order aggregate</a><p>Lifecycle, invariants, domain events.</p></div></article>
+      <article class="gate" data-gate="E2"><input type="checkbox" aria-label="Complete E2"><div><span class="gate-id">E2</span> <a href="../internal/commerce/application/order_service.go">Application use case</a><p>Create Order through owned ports.</p></div></article>
+      <article class="gate" data-gate="E3"><input type="checkbox" aria-label="Complete E3"><div><span class="gate-id">E3</span> <a href="../internal/commerce/persistence/memory_repo.go">Persistence</a><p>Snapshots and concurrent repository access.</p></div></article>
+      <article class="gate" data-gate="E4"><input type="checkbox" aria-label="Complete E4"><div><span class="gate-id">E4</span> <a href="../internal/commerce/eventbus/eventbus.go">Event publication</a><p>Deliver events to every subscriber.</p></div></article>
+      <article class="gate" data-gate="E5"><input type="checkbox" aria-label="Complete E5"><div><span class="gate-id">E5</span> <a href="../internal/commerce/http/handler.go">HTTP Order path</a><p>Run the application through net/http.</p></div></article>
+      <article class="gate" data-gate="E6"><input type="checkbox" aria-label="Complete E6"><div><span class="gate-id">E6</span> <a href="../test/e2e/milestones_test.go">External errors</a><p>Stable status and error envelopes.</p></div></article>
+    </div>
+  </section>
+
+  <section id="phase-3" class="phase">
+    <p class="text-xs font-black uppercase tracking-[.2em] text-indigo-700">Phase 3</p>
+    <h2 class="mt-1 text-2xl font-black">llm-d prerequisites</h2>
+    <p class="mb-4 text-slate-600">Concurrency and KV-cache plus local render, lint, schema, and dry-run tool contracts. Cluster failure drills wait until R8.</p>
+    <div class="gate-grid">
+      <article class="gate" data-gate="C0"><input type="checkbox" aria-label="Complete C0"><div><span class="gate-id">C0</span> <a href="../internal/foundation/concurrency/concurrency_test.go">Shared state</a><p>Mutexes, snapshots, ownership.</p></div></article>
+      <article class="gate" data-gate="C1"><input type="checkbox" aria-label="Complete C1"><div><span class="gate-id">C1</span> <a href="../internal/foundation/concurrency/advanced_test.go">Backpressure</a><p>Semaphores and bounded workers.</p></div></article>
+      <article class="gate" data-gate="C2"><input type="checkbox" aria-label="Complete C2"><div><span class="gate-id">C2</span> <a href="../internal/foundation/concurrency/advanced_test.go">Atomic state</a><p>Counters and one-winner CAS.</p></div></article>
+      <article class="gate" data-gate="C3"><input type="checkbox" aria-label="Complete C3"><div><span class="gate-id">C3</span> <a href="../internal/foundation/concurrency/memorymodel_test.go">Publication</a><p>Once and channel happens-before.</p></div></article>
+      <article class="gate" data-gate="K0"><input type="checkbox" aria-label="Complete K0"><div><span class="gate-id">K0</span> <a href="../internal/inference/prefixcache/prefix_test.go">KV prefix cache</a><p>Blocks, chained hashes, prefix match.</p></div></article>
+      <article class="gate" data-gate="Y0"><input type="checkbox" aria-label="Complete Y0"><div><span class="gate-id">Y0</span> <a href="../deploy/inference-lab/base/kustomization.yaml">YAML + Kustomize</a><p>Secure, values-driven workloads.</p></div></article>
+      <article class="gate" data-gate="P0"><input type="checkbox" aria-label="Complete P0"><div><span class="gate-id">P0</span> <a href="../deploy/inference-lab/compose.yaml">Packaging</a><p>Image roles and bounded Compose.</p></div></article>
+      <article class="gate" data-gate="H0"><input type="checkbox" aria-label="Complete H0"><div><span class="gate-id">H0</span> <a href="../deploy/inference-lab/chart/Chart.yaml">Helm</a><p>Values, resources, tests, rollback.</p></div></article>
+      <article class="gate" data-gate="T0"><input type="checkbox" aria-label="Complete T0"><div><span class="gate-id">T0</span> <a href="../test/acceptance/inference/00_smoke.robot">Robot Framework</a><p>Black-box public contracts.</p></div></article>
+      <article class="gate" data-gate="I0"><input type="checkbox" aria-label="Complete I0"><div><span class="gate-id">I0</span> <a href="../deploy/inference-lab/istio/kustomization.yaml">Istio</a><p>Ingress, strict mTLS, authorization.</p></div></article>
+      <article class="gate" data-gate="O0"><input type="checkbox" aria-label="Complete O0"><div><span class="gate-id">O0</span> <a href="../internal/inference/observability/metrics_test.go">Prometheus metrics</a><p>Bounded labels and lifecycle metrics.</p></div></article>
+      <article class="gate" data-gate="O1"><input type="checkbox" aria-label="Complete O1"><div><span class="gate-id">O1</span> <a href="../deploy/inference-lab/observability/operator.yaml">Operator + Grafana</a><p>Monitor, rules, provisioned dashboard.</p></div></article>
+      <article class="gate" data-gate="O2"><input type="checkbox" aria-label="Complete O2"><div><span class="gate-id">O2</span> <a href="../deploy/inference-lab/observability/compose.yaml">Local observability</a><p>Reproducible Prometheus and Grafana.</p></div></article>
+      <article class="gate" data-gate="O3"><input type="checkbox" aria-label="Complete O3"><div><span class="gate-id">O3</span> <a href="../deploy/inference-lab/observability/prometheus/rules.yml">Alert rules</a><p>Recording, firing, and recovery.</p></div></article>
+      <article class="gate" data-gate="G0"><input type="checkbox" aria-label="Complete G0"><div><span class="gate-id">G0</span> <a href="../deploy/inference-lab/gaie/resources.yaml">GAIE vocabulary</a><p>InferencePool and HTTPRoute references.</p></div></article>
+    </div>
+  </section>
+
+  <section id="phase-4" class="phase">
+    <p class="text-xs font-black uppercase tracking-[.2em] text-indigo-700">Phase 4</p>
+    <h2 class="mt-1 text-2xl font-black">llm-d Router</h2>
+    <p class="mb-4 text-slate-600">Production state first: Data Layer → policy → admission → EPP → Proxy → runtime.</p>
+    <div class="gate-grid">
+      <article class="gate" data-gate="R0"><input type="checkbox" aria-label="Complete R0"><div><span class="gate-id">R0</span> <a href="../internal/inference/datalayer/store_test.go">Data Layer</a><p>Freshness, order, tombstones, sources.</p></div></article>
+      <article class="gate" data-gate="R1"><input type="checkbox" aria-label="Complete R1"><div><span class="gate-id">R1</span> <a href="../internal/inference/routing/scheduler_test.go">Scheduling Profile</a><p>Deterministic Filter, Score, Pick.</p></div></article>
+      <article class="gate" data-gate="R2"><input type="checkbox" aria-label="Complete R2"><div><span class="gate-id">R2</span> <a href="../internal/inference/flowcontrol/queue_test.go">Flow Control</a><p>Bounded fairness, TTL, cancellation.</p></div></article>
+      <article class="gate" data-gate="R3"><input type="checkbox" aria-label="Complete R3"><div><span class="gate-id">R3</span> <a href="../internal/inference/configuration/manager_test.go">Versioned config</a><p>Validate, publish, retain, rollback.</p></div></article>
+      <article class="gate" data-gate="R4"><input type="checkbox" aria-label="Complete R4"><div><span class="gate-id">R4</span> <a href="../internal/inference/epp/request_handler_test.go">Request Handler</a><p>Parse, derive, admit, unwind.</p></div></article>
+      <article class="gate" data-gate="R5"><input type="checkbox" aria-label="Complete R5"><div><span class="gate-id">R5</span> <a href="../internal/inference/epp/production_picker_test.go">Production Picker</a><p>One decision from every state module.</p></div></article>
+      <article class="gate" data-gate="R6"><input type="checkbox" aria-label="Complete R6"><div><span class="gate-id">R6</span> <a href="../internal/inference/httpapi/router_test.go">Proxy</a><p>Limits, headers, cancellation, streaming.</p></div></article>
+      <article class="gate" data-gate="R7"><input type="checkbox" aria-label="Complete R7"><div><span class="gate-id">R7</span> <a href="../internal/inference/runtime/runtime_test.go">Runtime</a><p>Real modules drive HTTP behavior.</p></div></article>
+      <article class="gate" data-gate="R8"><input type="checkbox" aria-label="Complete R8"><div><span class="gate-id">R8</span> <a href="../cmd/inference-lab/main_test.go">Executable harness</a><p>Router/Model composition, group failure, graceful drain.</p></div></article>
+    </div>
+  </section>
+
+  <section id="optional" class="phase optional rounded-2xl p-6">
+    <p class="text-xs font-black uppercase tracking-[.2em] text-amber-700">★ Optional</p>
+    <h2 class="mt-1 text-2xl font-black">Extensions, not detours</h2>
+    <p class="mt-2 text-sm text-slate-700">These dashed branches belong to Phase 1 or Phase 2, but may be crossed or skipped. They have independent evidence and add nothing to the required 36-gate percentage.</p>
+    <div class="mt-4 rounded-xl border border-dashed border-amber-500 bg-white p-4">
+      <div class="mb-2 flex justify-between text-sm"><strong id="optional-progress-label">0 / 6 optional groups</strong><span>+0% required</span></div>
+      <div class="progress-track"><div id="optional-progress-fill" class="optional-progress-fill"></div></div>
+      <p class="mt-2 text-xs text-amber-900">Refresh evidence with <code>go run ./cmd/exercise optional</code>.</p>
+    </div>
+    <h3 class="mb-2 mt-5 font-black">Phase 1 · Go foundations</h3>
+    <div class="gate-grid">
+      <article class="gate optional-gate" data-optional="OPT-SYNTAX"><input type="checkbox" aria-label="Note OPT-SYNTAX"><div><span class="gate-id">★ Syntax</span><a href="../internal/foundation/language/optional_syntax_test.go">Niche syntax and compiler details</a><p>Flags, conversions, compile-fail rules, BCE, and unsafe details.</p></div></article>
+      <article class="gate optional-gate" data-optional="OPT-CONCURRENCY"><input type="checkbox" aria-label="Note OPT-CONCURRENCY"><div><span class="gate-id">★ Concurrency</span><a href="../internal/foundation/concurrency/advanced_test.go">Extended concurrency patterns</a><p>Bridge, tee, singleflight, circuit breaker, striped locks, and condition queues.</p></div></article>
+      <article class="gate optional-gate" data-optional="OPT-PERFORMANCE"><input type="checkbox" aria-label="Note OPT-PERFORMANCE"><div><span class="gate-id">★ Performance</span><a href="../internal/foundation/performance/escape_test.go">Runtime and performance details</a><p>Escape, layout, reflection, bounds checks, and profiling.</p></div></article>
+      <article class="gate optional-gate" data-optional="OPT-FP"><input type="checkbox" aria-label="Note OPT-FP"><div><span class="gate-id">★ FP</span><a href="../internal/foundation/fp/result_test.go">Collections, resilience, patterns, and FP</a><p>Result, Option, composition, iterators, retry, containers, and Go patterns.</p></div></article>
+    </div>
+    <h3 class="mb-2 mt-5 font-black">Phase 2 · Commerce project</h3>
+    <div class="gate-grid">
+      <article class="gate optional-gate" data-optional="OPT-WORKFLOW"><input type="checkbox" aria-label="Note OPT-WORKFLOW"><div><span class="gate-id">★ Workflow</span><a href="../internal/commerce/workflows/saga.go">Workflow and alternative concurrency models</a><p>Compensation, Temporal, actors, replay, and alternative ownership.</p></div></article>
+      <article class="gate optional-gate" data-optional="OPT-COMMERCE"><input type="checkbox" aria-label="Note OPT-COMMERCE"><div><span class="gate-id">★ Commerce+</span><a href="../internal/commerce/pricing/promotion_test.go">Advanced Commerce extensions</a><p>Promotions, settlement, event sourcing, and reconciliation.</p></div></article>
+    </div>
+  </section>
+</main>
+<script src="learning-progress.js"></script>
+<script>
+  const storageKey = "go-ddd-tdd.learning-path.v1";
+  const optionalStorageKey = "go-ddd-tdd.learning-path.optional.v1";
+  const gates = [...document.querySelectorAll("[data-gate]")];
+  const optionalGates = [...document.querySelectorAll("[data-optional]")];
+  const gateIDs = new Set(gates.map(gate => gate.dataset.gate));
+  const readManual = () => {
+    try {
+      return new Set(JSON.parse(localStorage.getItem(storageKey) || "[]").filter(id => gateIDs.has(id)));
+    } catch {
+      return new Set();
+    }
+  };
+  const writeManual = done => {
+    try {
+      localStorage.setItem(storageKey, JSON.stringify([...done]));
+    } catch {
+      // Some file:// browser profiles disable localStorage. Test sync still works.
+    }
+  };
+  const readVerified = () => new Set(
+    (window.__LEARNING_VERIFIED_GATES__ || []).filter(id => gateIDs.has(id))
+  );
+  let manualDone = readManual();
+  let verifiedDone = readVerified();
+  const optionalIDs = new Set(optionalGates.map(gate => gate.dataset.optional));
+  const readOptionalManual = () => {
+    try {
+      return new Set(JSON.parse(localStorage.getItem(optionalStorageKey) || "[]").filter(id => optionalIDs.has(id)));
+    } catch {
+      return new Set();
+    }
+  };
+  const writeOptionalManual = done => {
+    try { localStorage.setItem(optionalStorageKey, JSON.stringify([...done])); } catch {}
+  };
+  const readOptionalVerified = () => new Set(
+    (window.__LEARNING_OPTIONAL_VERIFIED_GATES__ || []).filter(id => optionalIDs.has(id))
+  );
+  let optionalManualDone = readOptionalManual();
+  let optionalVerifiedDone = readOptionalVerified();
+
+  function renderMistakeFocus() {
+    const focusByGate = window.__GO_MISTAKE_FOCUS__ || {};
+    for (const gate of gates) {
+      let note = gate.querySelector(".mistake-focus");
+      if (!note) {
+        note = document.createElement("p");
+        note.className = "mistake-focus";
+        gate.querySelector("div").appendChild(note);
+      }
+      note.textContent = `100 Go Mistakes · ${focusByGate[gate.dataset.gate] || "Run cmd/exercise to refresh this review focus"}`;
+    }
+  }
+
+  function render() {
+    renderMistakeFocus();
+    const done = new Set([...manualDone, ...verifiedDone]);
+    for (const gate of gates) {
+      const id = gate.dataset.gate;
+      const checked = done.has(id);
+      const verified = verifiedDone.has(id);
+      gate.classList.toggle("done", checked);
+      gate.classList.toggle("verified", verified);
+      const input = gate.querySelector("input");
+      input.checked = checked;
+      input.disabled = verified;
+      input.setAttribute(
+        "aria-label",
+        verified ? `${id} completed by passing tests` : `Mark ${id} complete manually`
+      );
+    }
+    const count = verifiedDone.size;
+    const percent = gates.length ? Math.round(count * 100 / gates.length) : 0;
+    document.getElementById("progress-label").textContent =
+      `${count} / ${gates.length} test-verified · ${manualDone.size} manual notes`;
+    document.getElementById("progress-percent").textContent = `${percent}%`;
+    document.getElementById("progress-fill").style.width = `${percent}%`;
+
+    const optionalDone = new Set([...optionalManualDone, ...optionalVerifiedDone]);
+    for (const gate of optionalGates) {
+      const id = gate.dataset.optional;
+      const checked = optionalDone.has(id);
+      const verified = optionalVerifiedDone.has(id);
+      gate.classList.toggle("done", checked);
+      gate.classList.toggle("verified", verified);
+      const input = gate.querySelector("input");
+      input.checked = checked;
+      input.disabled = verified;
+    }
+    const optionalPercent = optionalGates.length ? Math.round(optionalVerifiedDone.size * 100 / optionalGates.length) : 0;
+    document.getElementById("optional-progress-label").textContent =
+      `${optionalVerifiedDone.size} / ${optionalGates.length} test-verified · ${optionalManualDone.size} notes`;
+    document.getElementById("optional-progress-fill").style.width = `${optionalPercent}%`;
+  }
+
+  for (const gate of gates) {
+    gate.querySelector("input").addEventListener("change", event => {
+      event.target.checked ? manualDone.add(gate.dataset.gate) : manualDone.delete(gate.dataset.gate);
+      writeManual(manualDone);
+      render();
+    });
+  }
+  for (const gate of optionalGates) {
+    gate.querySelector("input").addEventListener("change", event => {
+      event.target.checked ? optionalManualDone.add(gate.dataset.optional) : optionalManualDone.delete(gate.dataset.optional);
+      writeOptionalManual(optionalManualDone);
+      render();
+    });
+  }
+  document.getElementById("reset").addEventListener("click", () => {
+    if (confirm("Reset manual progress? Test-verified gates will remain complete.")) {
+      manualDone = new Set();
+      optionalManualDone = new Set();
+      writeManual(manualDone);
+      writeOptionalManual(optionalManualDone);
+      render();
+    }
+  });
+
+  let refreshInFlight = false;
+  const syncButton = document.getElementById("sync-progress");
+  function refreshVerifiedProgress() {
+    if (refreshInFlight) return;
+    refreshInFlight = true;
+    syncButton.disabled = true;
+    syncButton.textContent = "Syncing...";
+    const script = document.createElement("script");
+    script.src = `learning-progress.js?t=${Date.now()}`;
+    script.onload = () => {
+      verifiedDone = readVerified();
+      optionalVerifiedDone = readOptionalVerified();
+      renderMistakeFocus();
+      document.getElementById("sync-status").textContent =
+        `Last progress reload: ${new Date().toLocaleTimeString()} · required and optional evidence are tracked separately.`;
+      refreshInFlight = false;
+      syncButton.disabled = false;
+      syncButton.textContent = "Sync test progress";
+      script.remove();
+      render();
+    };
+    script.onerror = () => {
+      refreshInFlight = false;
+      syncButton.disabled = false;
+      syncButton.textContent = "Sync test progress";
+      document.getElementById("sync-status").textContent =
+        "Progress sync failed. Run go run ./cmd/exercise next, then try again.";
+      script.remove();
+    };
+    document.head.appendChild(script);
+  }
+
+  syncButton.addEventListener("click", refreshVerifiedProgress);
+  render();
+  setInterval(refreshVerifiedProgress, 2000);
+</script>
+</body>
+</html>

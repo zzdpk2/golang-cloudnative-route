@@ -1,0 +1,13 @@
+.git
+.github
+.agents
+.codex
+.robot-results
+**/*.out
+**/*.test
+coverage*
+cpu.out
+mem.out
+docs
+test
+internal/review/.attempts

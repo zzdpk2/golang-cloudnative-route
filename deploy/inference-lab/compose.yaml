@@ -1,0 +1,9 @@
+name: inference-lab
+
+# TODO(exercise): define Router, model-a, and model-b from one image.
+# Add health-based dependencies, read-only filesystems, dropped capabilities,
+# a mounted Router config, bounded resources, and only the required host port.
+services:
+  exercise-placeholder:
+    image: busybox:1.37
+    command: ["sh", "-c", "echo TODO-exercise; sleep 3600"]

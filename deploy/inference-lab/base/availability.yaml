@@ -1,0 +1,13 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: inference-router
+spec: {}
+# TODO(exercise): preserve routing availability during voluntary disruption.
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: inference-router
+spec: {}
+# TODO(exercise): scale on a bounded production signal without destroying stability.

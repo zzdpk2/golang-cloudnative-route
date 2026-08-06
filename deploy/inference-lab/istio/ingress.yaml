@@ -1,0 +1,15 @@
+# TODO(exercise): configure an Istio-managed Gateway API listener.
+# Keep metrics, readiness, and debug endpoints off the public listener.
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: inference-gateway
+spec: {}
+---
+# TODO(exercise): attach an HTTPRoute to the Gateway and expose only the
+# intended inference path plus liveness.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: inference-router
+spec: {}

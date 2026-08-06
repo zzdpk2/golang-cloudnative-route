@@ -1,0 +1,22 @@
+{
+  "endpoints": [
+    {
+      "id": "model-a",
+      "url": "http://model-a.inference-lab.svc.cluster.local:8080",
+      "models": ["tiny-llm"],
+      "ready": true,
+      "queue_depth": 0,
+      "kv_cache_utilization": 0.45,
+      "cached_prefixes": ["shared-system-prompt"]
+    },
+    {
+      "id": "model-b",
+      "url": "http://model-b.inference-lab.svc.cluster.local:8080",
+      "models": ["tiny-llm"],
+      "ready": true,
+      "queue_depth": 0,
+      "kv_cache_utilization": 0.15
+    }
+  ]
+}
+

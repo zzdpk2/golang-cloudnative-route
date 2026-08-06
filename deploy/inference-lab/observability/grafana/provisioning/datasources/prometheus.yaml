@@ -1,0 +1,3 @@
+# TODO(exercise): provision Prometheus as an immutable default datasource.
+apiVersion: 1
+datasources: []

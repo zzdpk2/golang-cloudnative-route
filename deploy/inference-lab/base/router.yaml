@@ -1,0 +1,15 @@
+# TODO(exercise): implement the Router Deployment and ClusterIP Service.
+# Required evidence: non-root/read-only security, probes with distinct
+# semantics, resources, graceful termination, immutable config mount, and a
+# named HTTP port selected by the Service.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inference-router
+spec: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inference-router
+spec: {}

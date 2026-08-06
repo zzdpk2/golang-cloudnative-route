@@ -1,0 +1,8 @@
+package compilefail
+
+type value struct{ Field int }
+
+var _ = value{}
+    .Field
+
+// want: expected declaration

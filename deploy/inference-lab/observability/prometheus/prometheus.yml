@@ -1,0 +1,7 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+# TODO(exercise): load rules and discover Router plus Model Server targets.
+rule_files: []
+scrape_configs: []

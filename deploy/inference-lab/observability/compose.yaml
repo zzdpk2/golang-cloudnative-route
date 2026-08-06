@@ -1,0 +1,12 @@
+services:
+  prometheus:
+    image: prom/prometheus:v3.12.0
+    ports:
+      - "127.0.0.1:9090:9090"
+    # TODO(exercise): mount validated config/rules, bound retention, and persist data.
+
+  grafana:
+    image: grafana/grafana:13.1.0
+    ports:
+      - "127.0.0.1:3000:3000"
+    # TODO(exercise): provision the datasource/dashboard and use learning-only credentials.

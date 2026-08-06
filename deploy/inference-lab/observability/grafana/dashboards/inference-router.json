@@ -1,0 +1,7 @@
+{
+  "title": "TODO(exercise): Inference Router",
+  "description": "Build panels from SLOs and failure localization, not from available metrics.",
+  "schemaVersion": 41,
+  "version": 1,
+  "panels": []
+}

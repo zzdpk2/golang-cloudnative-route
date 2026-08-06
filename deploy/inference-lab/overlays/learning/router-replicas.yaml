@@ -1,0 +1,7 @@
+# TODO(exercise): patch only the Router replica count and prove the base is
+# unchanged.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inference-router
+spec: {}

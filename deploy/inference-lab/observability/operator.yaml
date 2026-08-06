@@ -1,0 +1,17 @@
+# TODO(exercise): select only inference Services and scrape their named metrics
+# port with an explicit interval and timeout. Prove the Prometheus selector
+# consumes this resource.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: inference-lab
+spec: {}
+---
+# TODO(exercise): add recording rules, multi-window SLO burn alerts, stale
+# Endpoint state, absent targets, and overload alerts with runbook annotations.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: inference-router
+spec:
+  groups: []

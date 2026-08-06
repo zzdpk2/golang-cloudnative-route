@@ -1,0 +1,13 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: inference-router-default-deny
+spec: {}
+# TODO(exercise): select Router traffic directions without granting any peers.
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: inference-router-allow
+spec: {}
+# TODO(exercise): reopen only the required ingress and model/DNS egress flows.

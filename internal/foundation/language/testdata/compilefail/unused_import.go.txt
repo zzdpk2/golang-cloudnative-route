@@ -1,0 +1,7 @@
+package compilefail
+
+import "fmt"
+
+var answer = 42
+
+// want: imported and not used

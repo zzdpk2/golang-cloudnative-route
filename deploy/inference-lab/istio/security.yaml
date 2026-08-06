@@ -1,0 +1,20 @@
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: inference-lab-strict
+spec: {}
+# TODO(exercise): require strict workload mTLS for the namespace.
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: inference-router
+spec: {}
+# TODO(exercise): allow only intended gateway-to-Router and Router-to-model paths.
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: model-servers
+spec: {}
+# TODO(exercise): make Router-to-model traffic explicitly use mesh mTLS.

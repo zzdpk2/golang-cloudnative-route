@@ -1,0 +1,8 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: inference-lab
+resources:
+  - ../base
+  - ingress.yaml
+  - security.yaml
+# TODO(exercise): add the chosen mesh-enrollment patch and production traffic policy.

@@ -1,0 +1,6 @@
+# TODO(exercise): decide whether namespace-wide injection or explicit workload
+# enrollment is the safer mesh policy, then implement and justify it.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: inference-lab

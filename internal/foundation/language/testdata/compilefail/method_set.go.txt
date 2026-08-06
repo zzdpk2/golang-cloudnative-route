@@ -1,0 +1,13 @@
+package compilefail
+
+type mutator interface {
+    Mutate()
+}
+
+type item struct{}
+
+func (*item) Mutate() {}
+
+var _ mutator = item{}
+
+// want: does not implement

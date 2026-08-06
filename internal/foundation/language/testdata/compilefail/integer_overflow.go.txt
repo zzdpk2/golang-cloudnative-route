@@ -1,0 +1,5 @@
+package compilefail
+
+const tooLarge uint8 = 256
+
+// want: overflows

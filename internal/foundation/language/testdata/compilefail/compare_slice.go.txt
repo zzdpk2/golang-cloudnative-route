@@ -1,0 +1,7 @@
+package compilefail
+
+var left = []int{1}
+var right = []int{1}
+var _ = left == right
+
+// want: slice can only be compared to nil

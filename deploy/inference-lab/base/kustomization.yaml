@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: inference-lab
+resources:
+  - namespace.yaml
+  - router-config.yaml
+  - models.yaml
+  - router.yaml
+  - availability.yaml
+  - network-policy.yaml
+images:
+  - name: inference-lab
+    newName: inference-lab
+    newTag: dev
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: go-ddd-tdd-inference-track
+    includeSelectors: false
+    includeTemplates: true

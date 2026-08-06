@@ -1,0 +1,6 @@
+package compilefail
+
+var values = map[string]int{"answer": 42}
+var _ = &values["answer"]
+
+// want: cannot take address

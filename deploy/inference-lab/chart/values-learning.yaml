@@ -1,0 +1,34 @@
+# Exercise values: render with
+# helm template learning ./deploy/inference-lab/chart -f ./deploy/inference-lab/chart/values-learning.yaml
+router:
+  replicas: 2
+
+image:
+  tag: learning
+
+models:
+  - name: model-a
+    model: tiny-llm
+    delay: 40ms
+    kvCacheUtilization: 0.70
+    cachedPrefixes:
+      - shared-system-prompt
+    resources:
+      requests:
+        cpu: 50m
+        memory: 32Mi
+      limits:
+        cpu: 300m
+        memory: 96Mi
+  - name: model-b
+    model: tiny-llm
+    delay: 80ms
+    kvCacheUtilization: 0.10
+    cachedPrefixes: []
+    resources:
+      requests:
+        cpu: 50m
+        memory: 32Mi
+      limits:
+        cpu: 300m
+        memory: 96Mi

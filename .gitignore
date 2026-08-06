@@ -1,0 +1,31 @@
+# Attempt archives written by `go run ./cmd/exercise reset`.
+# These are your own previous solutions, kept locally for diffing.
+internal/review/.attempts/
+
+# Profiling and test output
+*.out
+*.test
+.robot-results/
+
+# Your personal review schedule (grades and history).
+internal/review/schedule.json
+
+# Your earlier lab solutions, archived before a rewrite.
+internal/lab/.attempts/
+
+# Local refactor backups and caches
+.tmp/
+
+# SvelteKit dependencies and generated output
+web/learning-path/node_modules/
+web/learning-path/.svelte-kit/
+web/learning-path/build/
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Editor metadata
+.vscode/
+.idea/

@@ -1,0 +1,3 @@
+# TODO(exercise): provision dashboards from the mounted filesystem.
+apiVersion: 1
+providers: []

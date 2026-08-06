@@ -1,0 +1,28 @@
+# TODO(exercise): implement model-a Deployment and Service.
+# The same image must run in Model Server mode; do not copy Router policy into
+# this workload.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: model-a
+spec: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: model-a
+spec: {}
+---
+# TODO(exercise): implement model-b Deployment and Service with a different
+# deterministic delay and Endpoint state fixture.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: model-b
+spec: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: model-b
+spec: {}

@@ -1,0 +1,8 @@
+# TODO(exercise): build the versioned Endpoint Picker configuration.
+# Required sections: request handling, Data Layer sources/extractors, Flow
+# Control, Scheduling Profile, plugin references, and explicit failure policy.
+apiVersion: learning.llmd.local/v1alpha1
+kind: EndpointPickerConfig
+metadata:
+  name: inference-lab
+spec: {}

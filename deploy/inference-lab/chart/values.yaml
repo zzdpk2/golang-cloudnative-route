@@ -1,0 +1,63 @@
+image:
+  repository: inference-lab
+  tag: dev
+  pullPolicy: IfNotPresent
+
+router:
+  replicas: 1
+  service:
+    type: ClusterIP
+    port: 80
+  resources:
+    requests:
+      cpu: 25m
+      memory: 24Mi
+    limits:
+      cpu: 250m
+      memory: 64Mi
+
+models:
+  - name: model-a
+    model: tiny-llm
+    delay: 25ms
+    kvCacheUtilization: 0.55
+    cachedPrefixes:
+      - shared-system-prompt
+    resources:
+      requests:
+        cpu: 25m
+        memory: 24Mi
+      limits:
+        cpu: 250m
+        memory: 64Mi
+  - name: model-b
+    model: tiny-llm
+    delay: 70ms
+    kvCacheUtilization: 0.15
+    cachedPrefixes: []
+    resources:
+      requests:
+        cpu: 25m
+        memory: 24Mi
+      limits:
+        cpu: 250m
+        memory: 64Mi
+
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+
+serviceAccount:
+  create: true
+  name: ""
+
+nameOverride: ""
+fullnameOverride: ""
