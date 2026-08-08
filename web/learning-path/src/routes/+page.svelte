@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { asset } from "$app/paths";
   import GateStatus from "$lib/components/GateStatus.svelte";
   import Icon from "$lib/components/Icon.svelte";
   import ProgressRing from "$lib/components/ProgressRing.svelte";
@@ -19,6 +20,8 @@
   const optionalManualStorageKey = "go-ddd-tdd.learning-path.optional.v1";
   const statusFilters: StatusFilter[] = ["all", "current", "pending", "noted", "verified", "optional"];
   const pageSize = 6;
+  const repositorySourceRoot =
+    "https://github.com/zzdpk2/golang-cloudnative-route/blob/main";
 
   let verified = $state<Set<string>>(new Set());
   let manual = $state<Set<string>>(new Set());
@@ -115,10 +118,12 @@
   }
 
   function sourceHref(source: string) {
-    return `/source/${source
+    const encodedPath = source
       .split("/")
       .map((segment) => encodeURIComponent(segment))
-      .join("/")}`;
+      .join("/");
+
+    return `${repositorySourceRoot}/${encodedPath}`;
   }
 
   async function syncProgress(showBusy = false) {
@@ -126,7 +131,10 @@
     syncInFlight = true;
     if (showBusy) syncing = true;
     try {
-      const response = await fetch(`/api/progress?t=${Date.now()}`, { cache: "no-store" });
+      const response = await fetch(
+        `${asset("/progress.json")}?t=${Date.now()}`,
+        { cache: "no-store" },
+      );
       const payload = (await response.json()) as ProgressResponse;
       if (!response.ok) throw new Error(payload.error || "progress unavailable");
       verified = new Set(payload.verified);

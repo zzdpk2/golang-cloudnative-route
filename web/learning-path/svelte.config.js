@@ -1,11 +1,23 @@
-import adapter from "@sveltejs/adapter-node";
+import adapter from "@sveltejs/adapter-static";
 import { vitePreprocess } from "@sveltejs/vite-plugin-svelte";
 
-/** @type {import('@sveltejs/kit').Config} */
+const base = process.env.BASE_PATH ?? "";
+
+/** @type {import("@sveltejs/kit").Config} */
 const config = {
   preprocess: vitePreprocess(),
+
   kit: {
-    adapter: adapter({ precompress: true }),
+    adapter: adapter({
+      pages: "build",
+      assets: "build",
+      fallback: "404.html",
+      strict: false,
+    }),
+
+    paths: {
+      base,
+    },
   },
 };
 
