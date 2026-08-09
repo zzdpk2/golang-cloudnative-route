@@ -164,13 +164,14 @@ independent test evidence to the UI. A failure from that explicit command says
 only that an optional group is open; the required learning route remains
 unblocked.
 
-## Remote Chapter Reset
+## Remote Gate Reset
 
-The learning page can queue a protected chapter reset through a small Vercel
+Each exercise card can queue a protected gate reset through a small Vercel
 control plane. The browser never receives a GitHub token and never stores the
-Reset Key. A successful request dispatches `reset-chapter.yml`, which restores
-the selected starter, commits it to `main`, and dispatches the Pages workflow to
-recalculate test evidence.
+Reset Key. A successful request dispatches `reset-gate.yml`, which restores only
+the selected gate's explicit, versioned file allowlist, commits it to `main`, and
+dispatches the Pages workflow to recalculate test evidence. Some older gates
+share a source file; the confirmation dialog calls out that file-level boundary.
 
 Configure the Vercel project at the repository root with these environment
 variables:
@@ -181,7 +182,7 @@ variables:
   endpoint verifies the token owner before every dispatch.
 - `GITHUB_REPOSITORY`: `zzdpk2/golang-cloudnative-route`.
 - `ALLOWED_ORIGINS`: comma-separated exact origins, normally
-  `https://zzdpk2.github.io,http://localhost:5173`.
+  `https://zzdpk2.github.io,http://127.0.0.1:3000,http://localhost:3000`.
 
 After deploying Vercel, create the GitHub Actions repository variable
 `RESET_API_URL` with the deployment origin, for example

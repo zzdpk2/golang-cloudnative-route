@@ -48,10 +48,7 @@ jobs:
       - name: Validate reset control plane
         run: |
           node --test .github/scripts/reset-control-plane.test.mjs
-          node .github/scripts/reset-chapter.mjs 1 --dry-run
-          node .github/scripts/reset-chapter.mjs 2 --dry-run
-          node .github/scripts/reset-chapter.mjs 3 --dry-run
-          node .github/scripts/reset-chapter.mjs 4 --dry-run
+          node .github/scripts/reset-gate.mjs --all-dry-run
 
       - name: Install frontend dependencies
         working-directory: web/learning-path

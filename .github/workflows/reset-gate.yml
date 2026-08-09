@@ -1,17 +1,12 @@
-name: Reset learning chapter
+name: Reset learning gate
 
 on:
   workflow_dispatch:
     inputs:
-      phase:
-        description: Chapter to restore to its red starter
+      gate:
+        description: Gate ID to restore to its red starter (for example F0 or R6)
         required: true
-        type: choice
-        options:
-          - "1"
-          - "2"
-          - "3"
-          - "4"
+        type: string
       confirmation:
         description: Type RESET to confirm
         required: true
@@ -22,7 +17,7 @@ permissions:
   actions: write
 
 concurrency:
-  group: reset-learning-chapter
+  group: reset-learning-gate
   cancel-in-progress: false
 
 jobs:
@@ -42,28 +37,34 @@ jobs:
         with:
           node-version: 22
 
-      - name: Restore chapter starter
+      - name: Restore gate starter
+        env:
+          RESET_GATE: ${{ inputs.gate }}
         run: |
           node --test .github/scripts/reset-control-plane.test.mjs
-          node .github/scripts/reset-chapter.mjs "${{ inputs.phase }}" --dry-run
-          node .github/scripts/reset-chapter.mjs "${{ inputs.phase }}"
+          node .github/scripts/reset-gate.mjs "$RESET_GATE" --dry-run
+          node .github/scripts/reset-gate.mjs "$RESET_GATE"
 
       - name: Validate reset diff
+        env:
+          RESET_GATE: ${{ inputs.gate }}
         run: |
-          git diff --check
+          node .github/scripts/reset-gate.mjs "$RESET_GATE" --stage
+          git diff --cached --check
           git status --short
 
       - name: Commit reset
+        env:
+          RESET_GATE: ${{ inputs.gate }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
           if git diff --cached --quiet; then
-            echo "Chapter is already at its starter state."
+            git commit --allow-empty -m "Record reset of learning gate $RESET_GATE"
           else
-            git commit -m "Reset learning phase ${{ inputs.phase }}"
-            git push origin HEAD:main
+            git commit -m "Reset learning gate $RESET_GATE"
           fi
+          git push origin HEAD:main
 
       - name: Recalculate and deploy learning progress
         env:
