@@ -1,0 +1,71 @@
+name: Reset learning chapter
+
+on:
+  workflow_dispatch:
+    inputs:
+      phase:
+        description: Chapter to restore to its red starter
+        required: true
+        type: choice
+        options:
+          - "1"
+          - "2"
+          - "3"
+          - "4"
+      confirmation:
+        description: Type RESET to confirm
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: reset-learning-chapter
+  cancel-in-progress: false
+
+jobs:
+  reset:
+    if: github.actor == github.repository_owner && inputs.confirmation == 'RESET'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out main with history
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: Restore chapter starter
+        run: |
+          node --test .github/scripts/reset-control-plane.test.mjs
+          node .github/scripts/reset-chapter.mjs "${{ inputs.phase }}" --dry-run
+          node .github/scripts/reset-chapter.mjs "${{ inputs.phase }}"
+
+      - name: Validate reset diff
+        run: |
+          git diff --check
+          git status --short
+
+      - name: Commit reset
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Chapter is already at its starter state."
+          else
+            git commit -m "Reset learning phase ${{ inputs.phase }}"
+            git push origin HEAD:main
+          fi
+
+      - name: Recalculate and deploy learning progress
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run learning-pages.yml --ref main

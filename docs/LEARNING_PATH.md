@@ -163,3 +163,37 @@ Run `go run ./cmd/exercise optional` to execute all six groups and publish their
 independent test evidence to the UI. A failure from that explicit command says
 only that an optional group is open; the required learning route remains
 unblocked.
+
+## Remote Chapter Reset
+
+The learning page can queue a protected chapter reset through a small Vercel
+control plane. The browser never receives a GitHub token and never stores the
+Reset Key. A successful request dispatches `reset-chapter.yml`, which restores
+the selected starter, commits it to `main`, and dispatches the Pages workflow to
+recalculate test evidence.
+
+Configure the Vercel project at the repository root with these environment
+variables:
+
+- `RESET_KEY`: a random secret of at least 32 characters.
+- `GITHUB_DISPATCH_TOKEN`: a fine-grained token created by the repository owner,
+  limited to this repository, with Actions read/write permission. The Vercel
+  endpoint verifies the token owner before every dispatch.
+- `GITHUB_REPOSITORY`: `zzdpk2/golang-cloudnative-route`.
+- `ALLOWED_ORIGINS`: comma-separated exact origins, normally
+  `https://zzdpk2.github.io,http://localhost:5173`.
+
+After deploying Vercel, create the GitHub Actions repository variable
+`RESET_API_URL` with the deployment origin, for example
+`https://route-learning-reset.vercel.app`. Re-run the Pages workflow so the
+static frontend receives that public API origin.
+
+After a reset workflow completes, synchronize a clean local checkout with:
+
+```powershell
+git pull --ff-only
+```
+
+Git refuses the fast-forward when local uncommitted work would be overwritten.
+Commit or explicitly archive that work before retrying; never automate a forced
+local reset.
