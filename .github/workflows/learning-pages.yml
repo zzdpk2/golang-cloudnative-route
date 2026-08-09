@@ -43,6 +43,14 @@ jobs:
           cache: npm
           cache-dependency-path: web/learning-path/package-lock.json
 
+      - name: Validate reset control plane
+        run: |
+          node --test .github/scripts/reset-control-plane.test.mjs
+          node .github/scripts/reset-chapter.mjs 1 --dry-run
+          node .github/scripts/reset-chapter.mjs 2 --dry-run
+          node .github/scripts/reset-chapter.mjs 3 --dry-run
+          node .github/scripts/reset-chapter.mjs 4 --dry-run
+
       - name: Install frontend dependencies
         working-directory: web/learning-path
         run: npm ci
@@ -59,6 +67,7 @@ jobs:
         working-directory: web/learning-path
         env:
           BASE_PATH: /${{ github.event.repository.name }}
+          VITE_RESET_API_URL: ${{ vars.RESET_API_URL }}
         run: npm run build
 
       - name: Configure GitHub Pages
