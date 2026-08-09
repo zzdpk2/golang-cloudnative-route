@@ -1,4 +1,5 @@
 import { timingSafeEqual } from "node:crypto";
+import { gateIds, pathsForGate, sharedGatesFor } from "../reset/catalog.mjs";
 
 function allowedOrigins() {
   return (process.env.ALLOWED_ORIGINS ?? "")
@@ -65,7 +66,13 @@ export default {
     const config = configuration();
     if (request.method === "GET") {
       return config.ready
-        ? json({ available: true }, 200, origin)
+        ? json({
+            available: true,
+            gates: Object.fromEntries(gateIds.map((gate) => [gate, {
+              affectedFiles: pathsForGate(gate).length,
+              sharedWith: sharedGatesFor(gate),
+            }])),
+          }, 200, origin)
         : json({ available: false }, 503, origin);
     }
     if (request.method !== "POST") return json({ error: "method is not allowed" }, 405, origin);
@@ -83,9 +90,12 @@ export default {
     } catch {
       return json({ error: "invalid JSON body" }, 400, origin);
     }
-    const phase = Number(body.phase);
-    if (!body.confirmed || ![1, 2, 3, 4].includes(phase)) {
-      return json({ error: "a valid, confirmed phase is required" }, 400, origin);
+    if (typeof body !== "object" || body === null || Array.isArray(body)) {
+      return json({ error: "a valid, confirmed gate is required" }, 400, origin);
+    }
+    const gate = String(body.gate ?? "").toUpperCase();
+    if (body.confirmed !== true || !gateIds.includes(gate)) {
+      return json({ error: "a valid, confirmed gate is required" }, 400, origin);
     }
 
     const identityResponse = await fetch("https://api.github.com/user", {
@@ -102,7 +112,7 @@ export default {
     }
 
     const githubResponse = await fetch(
-      `https://api.github.com/repos/${config.repository}/actions/workflows/reset-chapter.yml/dispatches`,
+      `https://api.github.com/repos/${config.repository}/actions/workflows/reset-gate.yml/dispatches`,
       {
         method: "POST",
         headers: {
@@ -111,7 +121,7 @@ export default {
         },
         body: JSON.stringify({
           ref: "main",
-          inputs: { phase: String(phase), confirmation: "RESET" },
+          inputs: { gate, confirmation: "RESET" },
         }),
       },
     );
@@ -123,8 +133,9 @@ export default {
 
     return json({
       queued: true,
-      phase,
-      actionsUrl: `https://github.com/${config.repository}/actions/workflows/reset-chapter.yml`,
+      gate,
+      affectedFiles: pathsForGate(gate).length,
+      actionsUrl: `https://github.com/${config.repository}/actions/workflows/reset-gate.yml`,
       syncCommand: "git pull --ff-only",
     }, 202, origin);
   },

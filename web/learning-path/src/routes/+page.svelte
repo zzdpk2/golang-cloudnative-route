@@ -5,31 +5,38 @@
   import Icon from "$lib/components/Icon.svelte";
   import ProgressRing from "$lib/components/ProgressRing.svelte";
   import { allGates, gates, optionalGates, phases, type Gate, type PhaseId } from "$lib/journey";
+  import { reconcilePendingResets, validResetMetadata } from "$lib/reset-state.js";
 
   type ProgressResponse = {
     verified: string[];
     optionalVerified: string[];
     focus: Record<string, string>;
     updatedAt?: string;
+    revision?: string;
     error?: string;
   };
   type ResetDispatchResponse = {
     queued?: boolean;
-    phase?: number;
+    gate?: string;
+    affectedFiles?: number;
     actionsUrl?: string;
     syncCommand?: string;
     error?: string;
   };
   type PendingReset = {
-    phase: PhaseId;
+    gate: string;
     publishedRevision: string;
+  };
+  type GateResetMetadata = {
+    affectedFiles: number;
+    sharedWith: string[];
   };
   type StatusFilter = "all" | "current" | "pending" | "noted" | "verified" | "optional";
 
   const manualStorageKey = "go-ddd-tdd.learning-path.v1";
   const legacyManualStorageKey = "go-ddd-tdd.learning-path.next.v1";
   const optionalManualStorageKey = "go-ddd-tdd.learning-path.optional.v1";
-  const pendingResetStorageKey = "go-ddd-tdd.learning-path.pending-reset.v1";
+  const pendingResetStorageKey = "go-ddd-tdd.learning-path.pending-gate-reset.v1";
   const statusFilters: StatusFilter[] = ["all", "current", "pending", "noted", "verified", "optional"];
   const pageSize = 6;
   const repositorySourceRoot =
@@ -44,6 +51,7 @@
   let optionalManual = $state<Set<string>>(new Set());
   let focus = $state<Record<string, string>>({});
   let evidenceAt = $state<string>();
+  let evidenceRevision = $state<string>();
   let lastReload = $state<Date>();
   let syncing = $state(true);
   let syncError = $state<string>();
@@ -54,14 +62,16 @@
   let selectedId = $state("F0");
   let copiedId = $state<string>();
   let resetDialog: HTMLDialogElement;
-  let resetTarget = $state<PhaseId>();
+  let resetTargetId = $state<string>();
   let resetAvailability = $state<"checking" | "available" | "unavailable">("checking");
+  let resetMetadata = $state<Record<string, GateResetMetadata>>({});
   let resetting = $state(false);
   let resetError = $state<string>();
   let resetResult = $state<string>();
   let resetKey = $state("");
   let resetActionsUrl = $state<string>();
   let resetSyncCommand = $state("git pull --ff-only");
+  let resetAffectedFiles = $state<number>();
   let syncInFlight = false;
   let initialSelectionSet = false;
 
@@ -165,6 +175,7 @@
       optionalVerified = new Set(payload.optionalVerified || []);
       focus = payload.focus;
       evidenceAt = payload.updatedAt;
+      evidenceRevision = payload.revision;
       lastReload = new Date();
       syncError = undefined;
       reconcilePendingReset(payload);
@@ -269,28 +280,40 @@
       });
       const contentType = response.headers.get("content-type") ?? "";
       if (!response.ok || !contentType.includes("application/json")) throw new Error();
-      const payload = (await response.json()) as { available?: boolean };
-      resetAvailability = payload.available ? "available" : "unavailable";
+      const payload = (await response.json()) as {
+        available?: boolean;
+        gates?: Record<string, GateResetMetadata>;
+      };
+      const metadata = payload.gates ?? {};
+      const validMetadata = payload.available === true &&
+        validResetMetadata(metadata, allGates.map((gate) => gate.id));
+      resetAvailability = validMetadata ? "available" : "unavailable";
+      resetMetadata = validMetadata ? metadata : {};
     } catch {
       resetAvailability = "unavailable";
     }
   }
 
-  function openResetDialog(phase: PhaseId) {
-    if (resetAvailability !== "available" || syncing || !evidenceAt) return;
-    resetTarget = phase;
+  function canResetGate(gate: Gate) {
+    return resetAvailability === "available" && Boolean(resetMetadata[gate.id]);
+  }
+
+  function openResetDialog(gate: Gate) {
+    if (!canResetGate(gate) || syncing || !evidenceRevision) return;
+    resetTargetId = gate.id;
     resetError = undefined;
     resetResult = undefined;
     resetKey = "";
     resetActionsUrl = undefined;
+    resetAffectedFiles = undefined;
     resetDialog.showModal();
   }
 
-  function clearChapterNotes(phase: PhaseId) {
-    const requiredIds = new Set(gates.filter((gate) => gate.phase === phase).map((gate) => gate.id));
-    const optionalIds = new Set(optionalGates.filter((gate) => gate.phase === phase).map((gate) => gate.id));
-    manual = new Set([...manual].filter((id) => !requiredIds.has(id)));
-    optionalManual = new Set([...optionalManual].filter((id) => !optionalIds.has(id)));
+  function clearGateNote(gateId: string) {
+    const gate = allGates.find((item) => item.id === gateId);
+    if (!gate) return;
+    if (gate.optional) optionalManual = new Set([...optionalManual].filter((id) => id !== gateId));
+    else manual = new Set([...manual].filter((id) => id !== gateId));
     try {
       localStorage.setItem(manualStorageKey, JSON.stringify([...manual]));
       localStorage.setItem(optionalManualStorageKey, JSON.stringify([...optionalManual]));
@@ -299,17 +322,17 @@
     }
   }
 
-  function rememberPendingReset(phase: PhaseId) {
+  function rememberPendingReset(gate: string) {
     try {
       const stored = JSON.parse(localStorage.getItem(pendingResetStorageKey) ?? "[]") as unknown;
       const pending = Array.isArray(stored)
         ? stored.filter((item): item is PendingReset =>
             typeof item === "object" && item !== null &&
-            [1, 2, 3, 4].includes((item as PendingReset).phase) &&
+            allGates.some((gate) => gate.id === (item as PendingReset).gate) &&
             typeof (item as PendingReset).publishedRevision === "string")
         : [];
-      const next = pending.filter((item) => item.phase !== phase);
-      next.push({ phase, publishedRevision: evidenceAt! });
+      const next = pending.filter((item) => item.gate !== gate);
+      next.push({ gate, publishedRevision: evidenceRevision! });
       localStorage.setItem(
         pendingResetStorageKey,
         JSON.stringify(next),
@@ -320,26 +343,13 @@
   }
 
   function reconcilePendingReset(payload: ProgressResponse) {
-    if (!payload.updatedAt) return;
+    if (!payload.revision) return;
     try {
       const stored = JSON.parse(localStorage.getItem(pendingResetStorageKey) ?? "[]") as unknown;
-      if (!Array.isArray(stored)) return;
-      const remaining: PendingReset[] = [];
-      for (const item of stored) {
-        if (typeof item !== "object" || item === null) continue;
-        const pending = item as PendingReset;
-        if (![1, 2, 3, 4].includes(pending.phase) || typeof pending.publishedRevision !== "string") continue;
-        if (payload.updatedAt === pending.publishedRevision) {
-          remaining.push(pending);
-          continue;
-        }
-        const requiredIds = gates.filter((gate) => gate.phase === pending.phase).map((gate) => gate.id);
-        const optionalIds = optionalGates.filter((gate) => gate.phase === pending.phase).map((gate) => gate.id);
-        const resetIsPublished = requiredIds.every((id) => !payload.verified.includes(id)) &&
-          optionalIds.every((id) => !(payload.optionalVerified ?? []).includes(id));
-        if (resetIsPublished) clearChapterNotes(pending.phase);
-        else remaining.push(pending);
-      }
+      const gateIds = new Set(allGates.map((gate) => gate.id));
+      const optionalIds = new Set(optionalGates.map((gate) => gate.id));
+      const { remaining, cleared } = reconcilePendingResets(stored, payload, gateIds, optionalIds);
+      for (const gateId of cleared) clearGateNote(gateId);
       if (remaining.length > 0) localStorage.setItem(pendingResetStorageKey, JSON.stringify(remaining));
       else localStorage.removeItem(pendingResetStorageKey);
     } catch {
@@ -347,11 +357,13 @@
     }
   }
 
-  async function resetChapter() {
-    if (!resetTarget || resetting || resetKey.length < 32) return;
+  async function resetGate() {
+    if (!resetTargetId || resetting || resetKey.length < 32) return;
+    const target = allGates.find((gate) => gate.id === resetTargetId);
+    if (!target || !canResetGate(target) || !evidenceRevision) return;
     resetting = true;
     resetError = undefined;
-    const phase = resetTarget;
+    const gate = resetTargetId;
     try {
       const response = await fetch(resetEndpoint, {
         method: "POST",
@@ -360,7 +372,7 @@
           accept: "application/json",
           authorization: `Bearer ${resetKey}`,
         },
-        body: JSON.stringify({ phase, confirmed: true }),
+        body: JSON.stringify({ gate, confirmed: true }),
       });
       const contentType = response.headers.get("content-type") ?? "";
       const payload = contentType.includes("application/json")
@@ -369,12 +381,13 @@
       if (!response.ok || !payload.queued) {
         throw new Error(payload.error || `reset service returned ${response.status}`);
       }
-      rememberPendingReset(phase);
+      rememberPendingReset(gate);
       resetActionsUrl = payload.actionsUrl;
       resetSyncCommand = payload.syncCommand ?? "git pull --ff-only";
-      resetResult = "Reset queued. GitHub Actions will commit the starter, recalculate test evidence, and deploy the updated page.";
+      resetAffectedFiles = payload.affectedFiles;
+      resetResult = "Reset queued. GitHub Actions will restore this gate, recalculate test evidence, and deploy the updated page.";
     } catch (error) {
-      resetError = error instanceof Error ? error.message : "chapter reset could not be queued";
+      resetError = error instanceof Error ? error.message : "gate reset could not be queued";
     } finally {
       resetKey = "";
       resetting = false;
@@ -546,9 +559,6 @@
             <span class="chapter-score"><strong>{item.percent}%</strong><small>{item.done}/{item.total}</small></span>
             <span class="chapter-meter"><i style:width={`${item.percent}%`}></i></span>
           </button>
-          <button class="chapter-reset" disabled={resetAvailability !== "available" || syncing || !evidenceAt} title={resetAvailability !== "available" ? "Remote reset is not configured" : syncing || !evidenceAt ? "Wait for the first progress sync" : `Reset ${item.phase.title} through GitHub Actions`} aria-label={`Reset ${item.phase.title} code and progress`} onclick={() => openResetDialog(item.phase.id)}>
-            {resetAvailability === "checking" ? "Checking…" : resetAvailability !== "available" ? "Reset unavailable" : syncing || !evidenceAt ? "Waiting for evidence…" : "Reset chapter"}
-          </button>
         </div>
       {/each}
       <button class:active={phaseFilter === "all"} class="all-chapters" aria-pressed={phaseFilter === "all"} onclick={() => selectPhase("all")}><span>∞</span><strong>All chapters</strong><small>Cross-chapter search</small></button>
@@ -579,6 +589,7 @@
             {#if gate.optional}<p class="skip-note">Skippable · never changes required progress</p>{/if}
             <div class="gate-card-actions">
               <button class="note-button" aria-label={isVerified ? `${gate.id} test verified` : `Toggle manual note for ${gate.id}`} aria-pressed={isManual} onclick={() => toggleManual(gate.id)} disabled={isVerified}><Icon name="check" />{isVerified ? "Verified" : isManual ? "Noted" : "Add note"}</button>
+              <button class="gate-reset-button" disabled={!canResetGate(gate) || syncing || !evidenceRevision} title={!canResetGate(gate) ? "Remote reset metadata is unavailable" : syncing || !evidenceRevision ? "Wait for the first revision sync" : `Restore ${gate.id} through GitHub Actions`} aria-label={`Reset ${gate.id} ${gate.title} code and progress`} onclick={() => openResetDialog(gate)}><Icon name="refresh" />Reset</button>
               <button class="open-button" aria-label={`Open ${gate.id} ${gate.title}`} onclick={() => openDetail(gate.id)}>Open <Icon name="arrow" /></button>
             </div>
           </article>
@@ -628,14 +639,24 @@
     <nav aria-label="Learning references"><a href={sourceHref("docs/LEARNING_PATH.md")} target="_blank" rel="noreferrer"><Icon name="source" />Learning guide</a><a href={sourceHref("docs/go100/README.md")} target="_blank" rel="noreferrer"><span class="book-icon">100</span>Go Mistakes clinics</a></nav>
   </footer>
 
-  <dialog class="reset-dialog" bind:this={resetDialog} onclose={() => { if (!resetting) { resetTarget = undefined; resetKey = ""; } }}>
-    {#if resetTarget}
-      {@const target = phases[resetTarget - 1]!}
-      <div class="reset-dialog-mark" aria-hidden="true">0{resetTarget}</div>
+  <dialog class="reset-dialog" bind:this={resetDialog} onclose={() => { if (!resetting) { resetTargetId = undefined; resetKey = ""; } }}>
+    {#if resetTargetId}
+      {@const target = allGates.find((gate) => gate.id === resetTargetId)}
+      {#if target}
+      {@const targetReset = resetMetadata[target.id]}
+      <div class="reset-dialog-mark" aria-hidden="true">{target.optional ? "★" : target.id}</div>
       <span class="eyebrow"><i></i> Protected repository action</span>
-      <h2>Restart {target.shortTitle}?</h2>
-      <p>GitHub Actions will replace this chapter with its red starter and commit the result to <code>main</code>. The next Pages deployment will return this chapter's required and optional progress to zero.</p>
-      <p class="reset-dialog-safety"><strong>Your work stays in Git history.</strong> Contract tests and other chapters are not changed.</p>
+      <h2>Restart {target.id} · {target.title}?</h2>
+      {#if targetReset}
+        <p>GitHub Actions will restore {targetReset.affectedFiles} versioned starter {targetReset.affectedFiles === 1 ? "file" : "files"} owned by this gate and commit the result to <code>main</code>. The next Pages deployment will recalculate its progress.</p>
+        {#if targetReset.sharedWith.length}
+          <p class="reset-dialog-safety"><strong>Shared-file warning:</strong> {targetReset.sharedWith.join(", ")} use at least one of the same files and may also lose code. Your work remains recoverable from Git history.</p>
+        {:else}
+          <p class="reset-dialog-safety"><strong>Only {target.id}'s files are restored.</strong> Your current work remains recoverable from Git history.</p>
+        {/if}
+      {:else}
+        <p class="reset-message error" role="alert">Reset metadata is unavailable. Close this dialog and sync again before continuing.</p>
+      {/if}
       {#if !resetResult}
         <label class="reset-key-field">
           <span>Reset Key</span>
@@ -646,12 +667,14 @@
       {#if resetError}<p class="reset-message error" role="alert">{resetError}</p>{/if}
       {#if resetResult}
         <p class="reset-message success" role="status">{resetResult}</p>
+        {#if resetAffectedFiles}<p class="reset-file-count">{resetAffectedFiles} starter {resetAffectedFiles === 1 ? "file" : "files"} queued for restoration.</p>{/if}
         <div class="reset-next-step"><span>After the workflow completes</span><code>{resetSyncCommand}</code>{#if resetActionsUrl}<a href={resetActionsUrl} target="_blank" rel="noreferrer">Open GitHub Actions ↗</a>{/if}</div>
       {/if}
       <div class="reset-dialog-actions">
         <button onclick={() => resetDialog.close()} disabled={resetting}>{resetResult ? "Close" : "Keep my work"}</button>
-        {#if !resetResult}<button class="confirm-reset" onclick={() => void resetChapter()} disabled={resetting || resetKey.length < 32}>{resetting ? "Queueing reset…" : "Queue reset"}</button>{/if}
+        {#if !resetResult}<button class="confirm-reset" onclick={() => void resetGate()} disabled={resetting || resetKey.length < 32 || !targetReset}>{resetting ? "Queueing reset…" : "Queue reset"}</button>{/if}
       </div>
+      {/if}
     {/if}
   </dialog>
 </main>
