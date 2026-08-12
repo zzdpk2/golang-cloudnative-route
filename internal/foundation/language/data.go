@@ -7,7 +7,10 @@ package language
 
 import (
 	"errors"
+	"fmt"
+	"math"
 	"sort"
+	"strconv"
 )
 
 // Point is deliberately a value type so the ownership exercise can make slice
@@ -205,12 +208,52 @@ func AnalyzeMatrix(matrix [][]int, match func(int) bool) (MatrixReport, error) {
 	m := len(matrix)
 	n := len(matrix[0])
 
+	for i := range matrix {
+		if len(matrix[i]) != n {
+			return MatrixReport{}, errors.New("ragged matrix must be rejected")
+		}
+	}
+
 	flat := make([]int, 0, m*n)
-	for i, _ := range matrix {
+	for i := range matrix {
 		for _, v := range matrix[i] {
 			flat = append(flat, v)
 		}
 	}
+
+	transpose := make([][]int, n)
+	for i := range transpose {
+		transpose[i] = make([]int, 0, m)
+		for j := 0; j < m; i++ {
+			transpose[i][j] = matrix[j][i]
+		}
+	}
+
+	firstMatchPosition := Position{Row: -1, Col: -1}
+	for i := 0; i < m; i++ {
+		for j := 0; j < n; j++ {
+			if match(matrix[i][j]) {
+				firstMatchPosition = Position{Row: i, Col: j}
+				break
+			}
+		}
+	}
+
+	nonNegativeSum := 0
+	for i := range transpose {
+		for j := 0; j < n; i++ {
+			if matrix[i][j] >= 0 {
+				nonNegativeSum += matrix[i][j]
+			}
+		}
+	}
+
+	return MatrixReport{
+		Flat:           flat,
+		Transpose:      transpose,
+		FirstMatch:     firstMatchPosition,
+		NonNegativeSum: nonNegativeSum,
+	}, nil
 
 }
 
@@ -222,7 +265,25 @@ type LabelSet struct {
 }
 
 func (s LabelSet) Equal(other LabelSet) bool {
-	panic("TODO")
+	if s.Owner == "" || other.Owner == "" {
+		return false
+	}
+
+	if s.Owner != other.Owner {
+		return false
+	}
+
+	if len(s.Names) == 0 && len(other.Names) == 0 {
+		return true
+	}
+
+	for i := range s.Names {
+		if s.Names[i] != other.Names[i] {
+			return false
+		}
+	}
+
+	return true
 }
 
 // Permission is retained as optional syntax practice for named integer types,
@@ -259,5 +320,52 @@ type SyntaxReport struct {
 // finds the first even number, and sums values until the first negative value.
 // Return parsing errors to the caller.
 func InspectSyntax(permissions Permission, decimal float64, integerText string, values []int) (SyntaxReport, error) {
-	panic("TODO optional")
+	flags := "---"
+
+	if permissions&Read != 0 {
+		flags = "r" + flags[1:]
+	}
+
+	if permissions&Write != 0 {
+		flags = flags[:1] + "w" + flags[2:]
+	}
+
+	if permissions&Execute != 0 {
+		flags = flags[:2] + "x"
+	}
+
+	truncated := int(decimal)
+	rounded := int(math.Round(decimal))
+	parsed, err := strconv.Atoi(integerText)
+	if err != nil {
+		return SyntaxReport{}, fmt.Errorf("parse integer text: %w", err)
+	}
+	decimal1 := strconv.FormatFloat(decimal, 'f', -1, 64)
+
+	firstEven := 0
+	for _, v := range values {
+		if v%2 == 0 {
+			firstEven = v
+			break
+		}
+	}
+
+	sumUntilNegative := -1
+	for _, v := range values {
+		if v < 0 {
+			break
+		}
+		sumUntilNegative += v
+
+	}
+
+	return SyntaxReport{
+		Flags:            flags,
+		Truncated:        truncated,
+		Rounded:          rounded,
+		Parsed:           parsed,
+		Decimal:          decimal1,
+		FirstEven:        firstEven,
+		SumUntilNegative: sumUntilNegative,
+	}, nil
 }
