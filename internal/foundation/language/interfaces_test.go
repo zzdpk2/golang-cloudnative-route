@@ -83,6 +83,7 @@ func TestInterfaceFoundations(t *testing.T) {
 			{name: "typed nil speaker", value: speaker, want: DynamicReport{Kind: DynamicSpeaker, NilUnderlying: true}},
 			{name: "other", value: 3.14, want: DynamicReport{Kind: DynamicOther}},
 		}
+
 		for _, tc := range cases {
 			t.Run(tc.name, func(t *testing.T) {
 				if got := InspectDynamic(tc.value); got != tc.want {
