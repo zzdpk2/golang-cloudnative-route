@@ -1,5 +1,10 @@
 package language
 
+import (
+	"errors"
+	"io"
+)
+
 // Speaker is deliberately tiny. Router-facing interfaces should be owned by
 // callers and expose only the behavior a decision needs.
 type Speaker interface {
@@ -12,7 +17,7 @@ type ValueSpeaker struct {
 }
 
 func (s ValueSpeaker) Speak() string {
-	panic("TODO")
+	return "value:" + s.Name
 }
 
 // PointerSpeaker demonstrates a pointer-receiver method set. A PointerSpeaker
@@ -22,7 +27,7 @@ type PointerSpeaker struct {
 }
 
 func (s *PointerSpeaker) Speak() string {
-	panic("TODO")
+	return "pointer:" + s.Name
 }
 
 // NamedSpeaker demonstrates embedding and promoted methods without adding
@@ -34,7 +39,13 @@ type NamedSpeaker struct {
 
 // SpeakAll calls each dependency polymorphically and preserves input order.
 func SpeakAll(speakers []Speaker) []string {
-	panic("TODO")
+	res := make([]string, 0, len(speakers))
+
+	for _, speaker := range speakers {
+		res = append(res, speaker.Speak())
+	}
+
+	return res
 }
 
 // DynamicKind is a stable classification returned by InspectDynamic.
@@ -59,7 +70,27 @@ type DynamicReport struct {
 // A Speaker holding (*PointerSpeaker)(nil) is a non-nil interface whose
 // underlying pointer is nil; report that without calling Speak.
 func InspectDynamic(value any) DynamicReport {
-	panic("TODO")
+	// panic("TODO")
+	switch v := value.(type) {
+	case nil:
+		return DynamicReport{Kind: DynamicNil, NilUnderlying: true}
+
+	case int:
+		return DynamicReport{Kind: DynamicInteger}
+
+	case string:
+		return DynamicReport{Kind: DynamicText}
+
+	case Speaker:
+		report := DynamicReport{Kind: DynamicSpeaker}
+		if p, ok := v.(*PointerSpeaker); ok && p == nil {
+			report.NilUnderlying = true
+		}
+		return report
+	default:
+		return DynamicReport{Kind: DynamicOther}
+	}
+
 }
 
 // Reader and Writer demonstrate interface composition without recreating a
@@ -82,7 +113,35 @@ type ReadWriter interface {
 // Preserve partial progress on write errors, convert a nil-error short write to
 // io.ErrShortWrite, tolerate transient (0, nil) reads, and reject empty scratch.
 func Transfer(dst Writer, src Reader, scratch []byte) (int64, error) {
-	panic("TODO")
+	if len(scratch) == 0 {
+		return 0, errors.New("Buffer error!")
+	}
+
+	total := 0
+
+	for {
+		n, readErr := src.Read(scratch)
+		if n > 0 {
+			written, writeErr := dst.Write(scratch[:n])
+			total += written
+
+			if writeErr != nil {
+				return int64(total), writeErr
+			}
+
+			if written < n {
+				return int64(total), io.ErrShortWrite
+			}
+		}
+
+		if readErr == io.EOF {
+			return int64(total), io.EOF
+		}
+
+		if readErr != nil && readErr != io.EOF {
+			return int64(total), readErr
+		}
+	}
 }
 
 // Handler and HandlerFunc use the same adapter pattern as net/http.HandlerFunc.
@@ -93,11 +152,12 @@ type Handler interface {
 type HandlerFunc func(string) string
 
 func (f HandlerFunc) Handle(request string) string {
-	panic("TODO")
+	return f(request)
 }
 
 func ApplyHandler(handler Handler, request string) string {
-	panic("TODO")
+
+	return handler.Handle(request)
 }
 
 var _ Speaker = ValueSpeaker{}
